@@ -34,6 +34,7 @@ func (h *BalanceHandler) Routes() chi.Router {
 	r.Post("/transfer-from-game", h.TransferFromGame)
 	r.Post("/withdraw", h.WithdrawMoney)
 	r.Get("/transactions", h.GetTransactionHistory)
+	r.Get("/table-history", h.GetTableTransactionHistory)
 
 	return r
 }
@@ -206,8 +207,8 @@ func (h *BalanceHandler) GetTransactionHistory(w http.ResponseWriter, r *http.Re
 	}
 
 	// Convert to response format
-	responseTransactions := make([]map[string]interface{}, len(transactions))
-	for i, tx := range transactions {
+	var responseTransactions []map[string]interface{}
+	for _, tx := range transactions {
 		// Extract transaction type from metadata
 		transactionType := "unknown"
 		if txType, exists := tx.Metadata["type"]; exists {
@@ -216,48 +217,82 @@ func (h *BalanceHandler) GetTransactionHistory(w http.ResponseWriter, r *http.Re
 			}
 		}
 
+		// Skip internal game transactions for wallet transaction history
+		// Only show deposits, withdrawals, and external transactions
+		if transactionType == "game_buyin" || transactionType == "game_cashout" {
+			continue // Skip this transaction
+		}
+
 		// Calculate net amount for this user
 		var netAmount int64
 		var description string
 		userWalletAccount := formance.PlayerWalletAccount(userID)
 		userSessionPrefix := formance.SessionPrefix(userID)
 
+		// For internal transfers (between user's wallet and session accounts),
+		// only show the main wallet perspective to avoid double-counting
+		isInternalTransfer := false
 		for _, posting := range tx.Postings {
-			// Check wallet account
-			if posting.Destination == userWalletAccount {
-				netAmount += posting.Amount
+			srcIsUserWallet := posting.Source == userWalletAccount
+			dstIsUserWallet := posting.Destination == userWalletAccount
+			srcIsUserSession := posting.Source != "" && len(posting.Source) > len(userSessionPrefix) && posting.Source[:len(userSessionPrefix)] == userSessionPrefix
+			dstIsUserSession := posting.Destination != "" && len(posting.Destination) > len(userSessionPrefix) && posting.Destination[:len(userSessionPrefix)] == userSessionPrefix
+
+			// Check if this is an internal transfer between user's own accounts
+			if (srcIsUserWallet && dstIsUserSession) || (srcIsUserSession && dstIsUserWallet) {
+				isInternalTransfer = true
+				break
 			}
-			if posting.Source == userWalletAccount {
-				netAmount -= posting.Amount
-			}
-			// Check session accounts (any session for this user)
-			if posting.Destination != "" && len(posting.Destination) > len(userSessionPrefix) && posting.Destination[:len(userSessionPrefix)] == userSessionPrefix {
-				netAmount += posting.Amount
-			}
-			if posting.Source != "" && len(posting.Source) > len(userSessionPrefix) && posting.Source[:len(userSessionPrefix)] == userSessionPrefix {
-				netAmount -= posting.Amount
+		}
+
+		for _, posting := range tx.Postings {
+			srcIsUserWallet := posting.Source == userWalletAccount
+			dstIsUserWallet := posting.Destination == userWalletAccount
+			srcIsUserSession := posting.Source != "" && len(posting.Source) > len(userSessionPrefix) && posting.Source[:len(userSessionPrefix)] == userSessionPrefix
+			dstIsUserSession := posting.Destination != "" && len(posting.Destination) > len(userSessionPrefix) && posting.Destination[:len(userSessionPrefix)] == userSessionPrefix
+
+			if isInternalTransfer {
+				// For internal transfers, only count the main wallet impact
+				if dstIsUserWallet {
+					netAmount += posting.Amount
+				}
+				if srcIsUserWallet {
+					netAmount -= posting.Amount
+				}
+			} else {
+				// For external transfers, count all user accounts
+				if dstIsUserWallet {
+					netAmount += posting.Amount
+				}
+				if srcIsUserWallet {
+					netAmount -= posting.Amount
+				}
+				if dstIsUserSession {
+					netAmount += posting.Amount
+				}
+				if srcIsUserSession {
+					netAmount -= posting.Amount
+				}
 			}
 		}
 
 		// Set description based on transaction type
 		switch transactionType {
-		case "game_buyin":
-			description = "Transfer to game account"
-		case "game_cashout":
-			description = "Transfer from game account"
+		case "deposit":
+			description = "Deposit to wallet"
 		case "tournament_buyin":
-			description = "Tournament buy-in"
+			description = "Tournament entry fee"
 		case "tournament_prize":
 			description = "Tournament prize"
 		case "rake_collection":
 			description = "Rake collection"
 		case "withdrawal":
-			description = "Withdrawal to external account"
+			description = "Withdrawal from wallet"
 		default:
-			description = "Transaction"
+			description = "External transaction"
 		}
 
-		responseTransactions[i] = map[string]interface{}{
+		responseTransactions = append(responseTransactions, map[string]interface{}{
 			"id":          fmt.Sprintf("%d", tx.ID),
 			"user_id":     userID.String(),
 			"type":        transactionType,
@@ -265,7 +300,7 @@ func (h *BalanceHandler) GetTransactionHistory(w http.ResponseWriter, r *http.Re
 			"currency":    "MNT", // TODO: Extract from posting asset
 			"created_at":  tx.Date,
 			"description": description,
-		}
+		})
 	}
 
 	response := map[string]interface{}{
@@ -329,6 +364,129 @@ func (h *BalanceHandler) WithdrawMoney(w http.ResponseWriter, r *http.Request) {
 		"transaction_id": transactionID,
 		"amount":         req.Amount,
 		"status":         "completed",
+	}
+
+	writeJSONResponse(w, http.StatusOK, response)
+}
+
+// GetTableTransactionHistory returns game-related transaction history for the user
+func (h *BalanceHandler) GetTableTransactionHistory(w http.ResponseWriter, r *http.Request) {
+	userID, ok := auth.GetUserIDFromContext(r.Context())
+	if !ok {
+		writeErrorResponse(w, http.StatusUnauthorized, "User not authenticated")
+		return
+	}
+
+	// Parse query parameters
+	limitStr := r.URL.Query().Get("limit")
+	limit := 10 // default
+	if limitStr != "" {
+		if parsedLimit, err := strconv.Atoi(limitStr); err == nil && parsedLimit > 0 && parsedLimit <= 100 {
+			limit = parsedLimit
+		}
+	}
+
+	offsetStr := r.URL.Query().Get("offset")
+	offset := 0 // default
+	if offsetStr != "" {
+		if parsedOffset, err := strconv.Atoi(offsetStr); err == nil && parsedOffset >= 0 {
+			offset = parsedOffset
+		}
+	}
+
+	// Fetch transaction history from Formance
+	transactions, err := h.formanceService.GetTransactionHistory(r.Context(), userID, limit, offset)
+	if err != nil {
+		writeErrorResponse(w, http.StatusInternalServerError, "Failed to fetch table transaction history")
+		return
+	}
+
+	// Convert to response format - only include game-related transactions
+	var responseTransactions []map[string]interface{}
+	for _, tx := range transactions {
+		// Extract transaction type from metadata
+		transactionType := "unknown"
+		if txType, exists := tx.Metadata["type"]; exists {
+			if typeStr, ok := txType.(string); ok {
+				transactionType = typeStr
+			}
+		}
+
+		// Only show game-related transactions
+		if transactionType != "game_buyin" && transactionType != "game_cashout" {
+			continue // Skip non-game transactions
+		}
+
+		// Calculate net amount for this user
+		var netAmount int64
+		var description string
+		userWalletAccount := formance.PlayerWalletAccount(userID)
+		userSessionPrefix := formance.SessionPrefix(userID)
+
+		// Extract session ID from transaction metadata for additional context
+		var sessionID string
+		if sessID, exists := tx.Metadata["session_id"]; exists {
+			if sessIDStr, ok := sessID.(string); ok {
+				sessionID = sessIDStr
+			}
+		}
+
+		// For game transactions, calculate the amount transferred
+		for _, posting := range tx.Postings {
+			srcIsUserWallet := posting.Source == userWalletAccount
+			dstIsUserWallet := posting.Destination == userWalletAccount
+			srcIsUserSession := posting.Source != "" && len(posting.Source) > len(userSessionPrefix) && posting.Source[:len(userSessionPrefix)] == userSessionPrefix
+			dstIsUserSession := posting.Destination != "" && len(posting.Destination) > len(userSessionPrefix) && posting.Destination[:len(userSessionPrefix)] == userSessionPrefix
+
+			// For table history, show the actual transfer amounts
+			if transactionType == "game_buyin" {
+				// Buyin: money goes from wallet to session
+				if srcIsUserWallet && dstIsUserSession {
+					netAmount = -posting.Amount // Negative because money left wallet
+				}
+			} else if transactionType == "game_cashout" {
+				// Cashout: money comes from session to wallet
+				if srcIsUserSession && dstIsUserWallet {
+					netAmount = posting.Amount // Positive because money came to wallet
+				}
+			}
+		}
+
+		// Set description based on transaction type
+		switch transactionType {
+		case "game_buyin":
+			description = "Buy-in to table"
+		case "game_cashout":
+			description = "Cash out from table"
+		default:
+			description = "Table transaction"
+		}
+
+		transactionData := map[string]interface{}{
+			"id":          fmt.Sprintf("%d", tx.ID),
+			"user_id":     userID.String(),
+			"type":        transactionType,
+			"amount":      netAmount,
+			"currency":    "MNT", // TODO: Extract from posting asset
+			"created_at":  tx.Date,
+			"description": description,
+		}
+
+		// Add session ID if available
+		if sessionID != "" {
+			transactionData["session_id"] = sessionID
+		}
+
+		responseTransactions = append(responseTransactions, transactionData)
+	}
+
+	response := map[string]interface{}{
+		"transactions": responseTransactions,
+		"pagination": map[string]interface{}{
+			"limit":  limit,
+			"offset": offset,
+			"total":  len(responseTransactions), // Note: This is not the true total, just current batch size
+		},
 	}
 
 	writeJSONResponse(w, http.StatusOK, response)
