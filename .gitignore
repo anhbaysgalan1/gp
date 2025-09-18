@@ -58,3 +58,7 @@ jspm_packages
 .node_repl_history
 .next
 *.rdb
+
+
+postgres_data
+redis_data

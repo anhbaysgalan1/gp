@@ -4,6 +4,8 @@ import { Game, Player } from "../interfaces/index";
 import Card from "./Card";
 import BuyIn from "./BuyIn";
 import classNames from "classnames";
+import { useAuthContext } from "../contexts/AuthContext";
+import { useSessionContext } from "../contexts/SessionContext";
 
 type seatProps = {
     player: Player | null;
@@ -51,16 +53,21 @@ function active(player: Player, game: Game) {
 
 export default function Seat({ player, id, reveal }: seatProps) {
     const { appState, dispatch } = useContext(AppContext);
+    const { user } = useAuthContext();
+    const { isSeated, hasSession } = useSessionContext();
     const [sitDown, setSitDown] = useState(false);
+
+    // Check if this is the authenticated user's seat
+    const isMyPlayer = player && user && player.username === user.username;
 
     let hidden = false;
     if (player && appState.game) {
         if (appState.game.running) {
-            if (appState.clientID !== player?.uuid) {
+            if (!isMyPlayer) {
                 hidden = true;
             }
         }
-        // This is the player's seat
+        // This seat has a player - show the player
         return (
             <div className="relative">
                 <div className={active(player, appState.game)}>
@@ -95,17 +102,35 @@ export default function Seat({ player, id, reveal }: seatProps) {
                 </div>
             </div>
         );
-        // player already sat down, and this seat does not belong to them
-    } else if (player?.uuid != appState.clientID && !appState.game?.running) {
-        return (
-            <div>
-                <button className="m-4 h-20 w-56 rounded-2xl bg-neutral-700 p-2 text-neutral-400 opacity-20">
-                    <h2 className="text-4xl">{id}</h2>
-                </button>
-            </div>
-        );
-        // player has not yet sat down, all seats are open
-    } else if (!appState.game?.running) {
+    }
+
+    // Empty seat logic
+    if (!player) {
+        // User is already seated at another seat - show disabled seat
+        if (hasSession) {
+            return (
+                <div>
+                    <button className="m-4 h-20 w-56 rounded-2xl bg-neutral-700 p-2 text-neutral-400 opacity-20">
+                        <h2 className="text-4xl">{id}</h2>
+                        <p className="opacity-70">Occupied</p>
+                    </button>
+                </div>
+            );
+        }
+
+        // Game is running - seats not available
+        if (appState.game?.running) {
+            return (
+                <div>
+                    <button className="m-4 h-20 w-56 rounded-2xl bg-neutral-700 p-2 text-neutral-400 opacity-20">
+                        <h2 className="text-4xl">{id}</h2>
+                        <p className="opacity-70">Game Running</p>
+                    </button>
+                </div>
+            );
+        }
+
+        // Seat is available for taking
         return (
             <div>
                 {sitDown && (
@@ -124,7 +149,7 @@ export default function Seat({ player, id, reveal }: seatProps) {
                 )}
             </div>
         );
-    } else {
-        return <div></div>;
     }
+
+    return <div></div>;
 }

@@ -1,36 +1,29 @@
 package main
 
 import (
-	"context"
 	"log/slog"
 	"os"
-	"os/signal"
 
-	"github.com/evanofslack/go-poker/server"
+	"github.com/evanofslack/go-poker/internal/server"
 	"github.com/joho/godotenv"
 )
 
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() { <-c; cancel() }()
-
-	err := godotenv.Load()
-	if err != nil {
-		slog.Default().Error("load env", "error", err)
+	// Load environment variables
+	if err := godotenv.Load(); err != nil {
+		slog.Warn("No .env file found, using environment variables")
 	}
 
-	s, err := server.New()
+	// Create and start poker server
+	pokerServer, err := server.NewPokerServer()
 	if err != nil {
-		slog.Default().Error("create http server", "error", err)
-		os.Exit(1)
-	}
-	if err := s.Run(); err != nil {
-		slog.Default().Error("start http server", "error", err)
+		slog.Error("Failed to create poker server", "error", err)
 		os.Exit(1)
 	}
 
-	<-ctx.Done()
-	slog.Default().Info("Shutting down...")
+	// Start server (blocks until shutdown)
+	if err := pokerServer.Start(); err != nil {
+		slog.Error("Failed to start poker server", "error", err)
+		os.Exit(1)
+	}
 }

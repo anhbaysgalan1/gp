@@ -37,7 +37,7 @@ func New() (*Server, error) {
 		return nil, err
 	}
 
-	hub, err := newHub()
+	hub, err := NewHub()
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func New() (*Server, error) {
 }
 
 func (s *Server) Run() error {
-	go s.hub.run()
+	go s.hub.Run()
 	slog.Default().Info("running websocket hub")
 	go s.server.Serve(s.listener)
 	slog.Default().Info("starting http server")

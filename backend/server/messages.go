@@ -6,19 +6,20 @@ import (
 
 // inbound (client) actions
 const (
-	actionJoinTable   string = "join-table"
-	actionLeaveTable  string = "leave-table"
-	actionSendMessage string = "send-message"
-	actionSendLog     string = "send-log"
-	actionNewPlayer   string = "new-player"
-	actionTakeSeat    string = "take-seat"
-	actionStartGame   string = "start-game"
-	actionDealGame    string = "deal-game"
-	actionResetGame   string = "reset-game"
-	actionPlayerCall  string = "player-call"
-	actionPlayerCheck string = "player-check"
-	actionPlayerRaise string = "player-raise"
-	actionPlayerFold  string = "player-fold"
+	actionJoinTable    string = "join-table"
+	actionLeaveTable   string = "leave-table"
+	actionSendMessage  string = "send-message"
+	actionSendLog      string = "send-log"
+	actionNewPlayer    string = "new-player"
+	actionTakeSeat     string = "take-seat"
+	actionStartGame    string = "start-game"
+	actionDealGame     string = "deal-game"
+	actionResetGame    string = "reset-game"
+	actionPlayerCall   string = "player-call"
+	actionPlayerCheck  string = "player-check"
+	actionPlayerRaise  string = "player-raise"
+	actionPlayerFold   string = "player-fold"
+	actionGetBalance   string = "get-balance"
 )
 
 type base struct {
@@ -88,12 +89,17 @@ type playerFold struct {
 	base // actionPlayerFold
 }
 
+type getBalance struct {
+	base // actionGetBalance
+}
+
 // outbound (server) actions
 const (
 	actionNewMessage       string = "new-message"
 	actionNewLog           string = "new-log"
 	actionUpdateGame       string = "update-game"
 	actionUpdatePlayerUUID string = "update-player-uuid"
+	actionUpdateBalance    string = "update-balance"
 )
 
 type newMessage struct {
@@ -114,9 +120,29 @@ type newLog struct {
 type updateGame struct {
 	base                 // actionUpdateGame
 	Game *poker.GameView `json:"game"`
+	SessionInfo *SessionInfo `json:"session_info,omitempty"`
+}
+
+type SessionInfo struct {
+	UserID       string `json:"user_id"`
+	SessionID    string `json:"session_id,omitempty"`
+	SeatNumber   *int   `json:"seat_number,omitempty"`
+	IsSeated     bool   `json:"is_seated"`
+	HasSession   bool   `json:"has_session"`
 }
 
 type updatePlayerUUID struct {
 	base        //actionUpdatePlayerUUID
 	Uuid string `json:"uuid"`
+}
+
+type updateBalance struct {
+	base                    // actionUpdateBalance
+	MainBalance    int64    `json:"main_balance"`
+	GameBalance    int64    `json:"game_balance"`
+	Currency       string   `json:"currency"`
+	TransactionID  string   `json:"transaction_id,omitempty"`
+	ChangeAmount   int64    `json:"change_amount,omitempty"`
+	ChangeType     string   `json:"change_type,omitempty"` // "buy_in", "win", "cash_out", "transfer_in", "transfer_out"
+	Timestamp      string   `json:"timestamp"`
 }

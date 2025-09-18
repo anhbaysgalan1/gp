@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tree:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker compose:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(go mod:*)",
+      "Bash(go run:*)",
+      "Bash(curl:*)",
+      "Bash(go build:*)",
+      "Bash(go get:*)",
+      "Bash(go test:*)",
+      "Bash(lsof:*)",
+      "Bash(find:*)",
+      "Bash(pnpm run:*)",
+      "WebSearch",
+      "Bash(pkill:*)",
+      "Bash(xargs kill:*)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm dev:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

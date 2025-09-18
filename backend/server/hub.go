@@ -13,7 +13,7 @@ type Hub struct {
 	tables     map[*table]bool
 }
 
-func newHub() (*Hub, error) {
+func NewHub() (*Hub, error) {
 	redis, err := newRedisClient()
 	if err != nil {
 	    return nil, err
@@ -29,7 +29,7 @@ func newHub() (*Hub, error) {
     return hub, nil
 }
 
-func (h *Hub) run() {
+func (h *Hub) Run() {
 	for {
 		select {
 		case client := <-h.register:

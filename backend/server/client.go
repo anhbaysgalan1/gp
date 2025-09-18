@@ -8,8 +8,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/evanofslack/go-poker/internal/formance"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"gorm.io/gorm"
 )
 
 const (
@@ -26,12 +28,16 @@ var upgrader = websocket.Upgrader{
 
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
-	hub      *Hub
-	conn     *websocket.Conn // Websocket connection
-	send     chan []byte     // Buffered channel of outbound bytes
-	uuid     string          // UUID
-	username string
-	table    *table // Player's table
+	hub             *Hub
+	conn            *websocket.Conn // Websocket connection
+	send            chan []byte     // Buffered channel of outbound bytes
+	uuid            string          // UUID
+	username        string
+	userID          uuid.UUID // Authenticated user ID
+	sessionID       uuid.UUID // Current game session ID for this client
+	table           *table    // Player's table
+	formanceService *formance.Service // Access to balance operations
+	db              *gorm.DB          // Database connection
 }
 
 func newClient(conn *websocket.Conn, hub *Hub) *Client {
@@ -43,11 +49,40 @@ func newClient(conn *websocket.Conn, hub *Hub) *Client {
 	}
 }
 
+func newClientWithAuth(conn *websocket.Conn, hub *Hub, userID uuid.UUID, username string, formanceService *formance.Service, db *gorm.DB) *Client {
+	client := &Client{
+		hub:             hub,
+		conn:            conn,
+		send:            make(chan []byte, 1024),
+		uuid:            uuid.New().String(),
+		userID:          userID,
+		username:        username,
+		formanceService: formanceService,
+		db:              db,
+	}
+
+	// Send initial balance update when client connects
+	go func() {
+		// Small delay to ensure client is ready to receive messages
+		time.Sleep(100 * time.Millisecond)
+		sendBalanceUpdateToClient(client, "connection", 0, "")
+	}()
+
+	return client
+}
+
 func (c *Client) disconnect() {
-	c.hub.unregister <- c
+	// Handle cash-out BEFORE unregistering from hub to avoid sending on closed channel
 	if c.table != nil {
+		// Handle cash-out before leaving table
+		if c.formanceService != nil && c.userID != uuid.Nil {
+			handlePlayerCashOut(c)
+		}
 		c.table.unregister <- c
 	}
+
+	// Unregister from hub (this closes the send channel)
+	c.hub.unregister <- c
 	c.conn.Close()
 }
 
@@ -238,7 +273,29 @@ func (c *Client) processEvents(rawMessage []byte) error {
 		handleFold(c)
 		return nil
 
+	case actionGetBalance:
+		handleGetBalance(c)
+		return nil
+
 	default:
 		return errors.New("unexpected message action")
 	}
+}
+
+// ServeWsWithAuth handles websocket requests with authentication and balance services
+func ServeWsWithAuth(hub *Hub, w http.ResponseWriter, r *http.Request, userID uuid.UUID, username string, formanceService *formance.Service, db *gorm.DB) {
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	client := newClientWithAuth(conn, hub, userID, username, formanceService, db)
+
+	client.hub.register <- client
+
+	// Allow collection of memory referenced by the caller by doing all work in
+	// new goroutines.
+	go client.writePump()
+	go client.readPump()
 }

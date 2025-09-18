@@ -15,21 +15,27 @@ const initialPot: PotType[] = [
 
 export default function Pot() {
     const { appState, dispatch } = useContext(AppContext);
-    const game = appState.game;
-    if (!game || !game.pots) {
-        return null;
-    }
-    const [stage, setStage] = useState(game.stage);
+    const [stage, setStage] = useState(2);
     const [pots, setPots] = useState(initialPot);
 
-    if (game.stage != stage) {
-        setStage(game.stage);
+    const game = appState.game;
 
-        if (game.stage == 2) {
-            setPots(initialPot);
-        } else {
-            setPots(game.pots);
+    useEffect(() => {
+        if (game && game.stage !== undefined) {
+            if (game.stage !== stage) {
+                setStage(game.stage);
+
+                if (game.stage === 2) {
+                    setPots(initialPot);
+                } else if (game.pots) {
+                    setPots(game.pots);
+                }
+            }
         }
+    }, [game?.stage, game?.pots, stage]);
+
+    if (!game || !game.pots) {
+        return null;
     }
 
     return (

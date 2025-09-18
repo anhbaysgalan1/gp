@@ -26,7 +26,17 @@ function cardToString(card: CardType) {
         return "?";
     }
 
+    // Handle invalid card values
+    if (!card || card === "0" || card === 0) {
+        return null;
+    }
+
     let c = parseInt(card);
+    if (isNaN(c) || c <= 0) {
+        console.warn("Invalid card value:", card);
+        return null;
+    }
+
     // bitwise operations to map int32 representation to string representation
     let rank = (c >> 8) & 0x0f;
     let suit = c & 0xf000;
@@ -38,7 +48,15 @@ function cardToString(card: CardType) {
     numToCharSuits.set(0x2000, "H");
     numToCharSuits.set(0x1000, "S");
 
-    return numToCharRanks[rank] + numToCharSuits.get(suit);
+    const rankChar = numToCharRanks[rank];
+    const suitChar = numToCharSuits.get(suit);
+
+    if (!rankChar || !suitChar) {
+        console.warn("Invalid card parsing - rank:", rank, "suit:", suit, "original:", card);
+        return null;
+    }
+
+    return rankChar + suitChar;
 }
 
 function getSuitChar(letter: string) {
@@ -75,7 +93,7 @@ export default function Card({ card, placeholder, folded, hidden }: cardProps) {
     }
 
     const c = cardToString(card);
-    if (c == "2\u0000" || card == "0") {
+    if (!c) {
         return null;
     }
     if (hidden) {
