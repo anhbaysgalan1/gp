@@ -27,7 +27,7 @@ function cardToString(card: CardType) {
     }
 
     // Handle invalid card values
-    if (!card || card === "0" || card === 0) {
+    if (!card || card === "0" || parseInt(card) === 0) {
         return null;
     }
 
