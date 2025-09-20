@@ -2,7 +2,7 @@ import { useState, useContext, useEffect, useCallback } from "react";
 import { AppContext } from "../providers/AppStore";
 import { useWebSocket } from "../contexts/WebSocketContext";
 import InputButton from "./InputButton";
-import { Slider } from "@mantine/core";
+// import { Slider } from "@mantine/core";
 import classNames from "classnames";
 
 type raiseProps = {
@@ -132,16 +132,14 @@ export default function RaiseInput({ showRaise, setShowRaise }: raiseProps) {
                     </button>
                 </div>
                 <div className="w-64 pb-2">
-                    <Slider
+                    <input
+                        type="range"
                         value={inputValue}
-                        onChange={setInputValue}
+                        onChange={(e) => setInputValue(parseInt(e.target.value))}
                         min={minRaise}
                         max={currentStack + currentBet}
                         step={1}
-                        color="gray"
-                        showLabelOnHover={false}
-                        size="md"
-                        radius="xs"
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                     />
                 </div>
             </div>

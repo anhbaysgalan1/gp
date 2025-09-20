@@ -25,8 +25,8 @@ export default function Join() {
         dispatch({ type: "setUsername", payload: username });
         dispatch({ type: "setTablename", payload: tablename });
         if (socket) {
-            joinTable(socket, tablename);
-            newPlayer(socket, username);
+            joinTable(tablename);
+            newPlayer(username);
         }
     };
 

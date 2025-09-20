@@ -35,15 +35,15 @@ function getWinner(game: GameType) {
     return winningPlayer;
 }
 
-function handleWinner(game: GameType | null, socket: WebSocket | null) {
-    if (!game || !socket) {
+function handleWinner(game: GameType | null) {
+    if (!game) {
         return null;
     }
     if (game && game.stage === 1 && game.pots.length !== 0) {
         const winningPlayer = getWinner(game);
         const pot = game.pots[game.pots.length - 1].amount;
         const message = winningPlayer.username + " wins " + pot;
-        sendLog(socket, message);
+        sendLog(message);
     }
 }
 
@@ -78,9 +78,9 @@ export default function TableOld({ players, setPlayers }: tableProps) {
     useEffect(() => {
         // this effect triggers at start of every new hand
         if (game && game.running && game.stage === 2 && socket) {
-            sendLog(socket, dealerLog(game));
-            sendLog(socket, bigBlindLog(game));
-            sendLog(socket, smallBlindLog(game));
+            sendLog(dealerLog(game));
+            sendLog(bigBlindLog(game));
+            sendLog(smallBlindLog(game));
         }
     }, [game?.stage]);
 
@@ -88,11 +88,11 @@ export default function TableOld({ players, setPlayers }: tableProps) {
         // this effect triggers when betting is over
         if (game && game.stage === 1 && game.pots.length !== 0) {
             setRevealedPlayers(getRevealedPlayers(game));
-            handleWinner(game, socket);
+            handleWinner(game);
             const timer = setTimeout(() => {
                 setRevealedPlayers([]);
                 if (socket) {
-                    dealGame(socket);
+                    dealGame();
                 }
             }, 5000);
             return () => {
