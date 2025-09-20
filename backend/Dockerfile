@@ -25,8 +25,8 @@ FROM alpine:latest
 # Install ca-certificates for HTTPS calls and tzdata for timezone
 RUN apk --no-cache add ca-certificates tzdata
 
-# Create non-root user
-RUN adduser -S -D -H -h /app appuser
+# Create non-root user and group
+RUN addgroup -g 1001 appgroup && adduser -S -D -H -h /app -u 1001 -G appgroup appuser
 
 # Set working directory
 WORKDIR /app
@@ -35,7 +35,7 @@ WORKDIR /app
 COPY --from=builder /app/main .
 
 # Change ownership to appuser
-RUN chown appuser:appuser /app/main
+RUN chown appuser:appgroup /app/main
 
 # Switch to non-root user
 USER appuser
