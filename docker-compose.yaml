@@ -1,17 +1,4 @@
 services:
-  # go-poker:
-  #   image: evanofslack/go-poker:latest
-  #   container_name: go-poker
-  #   restart: unless-stopped
-  #   ports:
-  #     - 8080:8080
-  #   environment:
-  #     REDIS_URL: ${REDIS_URL}
-  #     DATABASE_URL: ${DATABASE_URL}
-  #   depends_on:
-  #     - redis
-  #     - postgres
-
   postgres:
     container_name: go-poker-postgres
     image: postgres:17-alpine
