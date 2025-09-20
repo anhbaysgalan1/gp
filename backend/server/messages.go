@@ -1,9 +1,5 @@
 package server
 
-import (
-	"github.com/evanofslack/go-poker/poker"
-)
-
 // inbound (client) actions
 const (
 	actionJoinTable    string = "join-table"
@@ -119,7 +115,7 @@ type newLog struct {
 
 type updateGame struct {
 	base                 // actionUpdateGame
-	Game *poker.GameView `json:"game"`
+	Game interface{} `json:"game"`
 	SessionInfo *SessionInfo `json:"session_info,omitempty"`
 }
 

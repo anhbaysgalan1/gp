@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/evanofslack/go-poker/internal/config"
-	"github.com/evanofslack/go-poker/internal/formance"
+	"github.com/anhbaysgalan1/gp/internal/config"
+	"github.com/anhbaysgalan1/gp/internal/formance"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,10 +13,10 @@ import (
 
 func TestFormanceService_GetUserBalance(t *testing.T) {
 	cfg := &config.Config{
-		FormanceAPIURL:    "http://localhost:8080",
-		FormanceAPIKey:    "test",
+		FormanceAPIURL:     "http://localhost:8080",
+		FormanceAPIKey:     "test",
 		FormanceLedgerName: "poker-test",
-		FormanceCurrency:  "MNT",
+		FormanceCurrency:   "MNT",
 	}
 
 	service := formance.NewService(cfg)
@@ -53,10 +53,10 @@ func TestFormanceService_GetUserBalance(t *testing.T) {
 
 func TestFormanceService_TransferOperations(t *testing.T) {
 	cfg := &config.Config{
-		FormanceAPIURL:    "http://localhost:8080",
-		FormanceAPIKey:    "test",
+		FormanceAPIURL:     "http://localhost:8080",
+		FormanceAPIKey:     "test",
 		FormanceLedgerName: "poker-test",
-		FormanceCurrency:  "MNT",
+		FormanceCurrency:   "MNT",
 	}
 
 	service := formance.NewService(cfg)
@@ -120,10 +120,10 @@ func TestFormanceService_TransferOperations(t *testing.T) {
 
 func TestFormanceService_TournamentOperations(t *testing.T) {
 	cfg := &config.Config{
-		FormanceAPIURL:    "http://localhost:8080",
-		FormanceAPIKey:    "test",
+		FormanceAPIURL:     "http://localhost:8080",
+		FormanceAPIKey:     "test",
 		FormanceLedgerName: "poker-test",
-		FormanceCurrency:  "MNT",
+		FormanceCurrency:   "MNT",
 	}
 
 	service := formance.NewService(cfg)
@@ -187,10 +187,10 @@ func TestFormanceService_TournamentOperations(t *testing.T) {
 
 func TestFormanceService_RakeCollection(t *testing.T) {
 	cfg := &config.Config{
-		FormanceAPIURL:    "http://localhost:8080",
-		FormanceAPIKey:    "test",
+		FormanceAPIURL:     "http://localhost:8080",
+		FormanceAPIKey:     "test",
 		FormanceLedgerName: "poker-test",
-		FormanceCurrency:  "MNT",
+		FormanceCurrency:   "MNT",
 	}
 
 	service := formance.NewService(cfg)
@@ -252,10 +252,10 @@ func TestFormanceService_RakeCollection(t *testing.T) {
 
 func TestFormanceService_GetTransactionHistory(t *testing.T) {
 	cfg := &config.Config{
-		FormanceAPIURL:    "http://localhost:8080",
-		FormanceAPIKey:    "test",
+		FormanceAPIURL:     "http://localhost:8080",
+		FormanceAPIKey:     "test",
 		FormanceLedgerName: "poker-test",
-		FormanceCurrency:  "MNT",
+		FormanceCurrency:   "MNT",
 	}
 
 	service := formance.NewService(cfg)
@@ -297,10 +297,10 @@ func TestFormanceService_GetTransactionHistory(t *testing.T) {
 
 func TestFormanceService_Initialize(t *testing.T) {
 	cfg := &config.Config{
-		FormanceAPIURL:    "http://localhost:8080",
-		FormanceAPIKey:    "test",
+		FormanceAPIURL:     "http://localhost:8080",
+		FormanceAPIKey:     "test",
 		FormanceLedgerName: "poker-test",
-		FormanceCurrency:  "MNT",
+		FormanceCurrency:   "MNT",
 	}
 
 	service := formance.NewService(cfg)
@@ -314,10 +314,10 @@ func TestFormanceService_Initialize(t *testing.T) {
 
 func TestFormanceService_EdgeCases(t *testing.T) {
 	cfg := &config.Config{
-		FormanceAPIURL:    "http://localhost:8080",
-		FormanceAPIKey:    "test",
+		FormanceAPIURL:     "http://localhost:8080",
+		FormanceAPIKey:     "test",
 		FormanceLedgerName: "poker-test",
-		FormanceCurrency:  "MNT",
+		FormanceCurrency:   "MNT",
 	}
 
 	service := formance.NewService(cfg)
@@ -362,10 +362,10 @@ func TestFormanceService_RealIntegration(t *testing.T) {
 	t.Skip("Skipping real integration test - requires Formance instance")
 
 	cfg := &config.Config{
-		FormanceAPIURL:    "http://localhost:8080",
-		FormanceAPIKey:    "real-api-key",
+		FormanceAPIURL:     "http://localhost:8080",
+		FormanceAPIKey:     "real-api-key",
 		FormanceLedgerName: "poker-integration-test",
-		FormanceCurrency:  "MNT",
+		FormanceCurrency:   "MNT",
 	}
 
 	service := formance.NewService(cfg)

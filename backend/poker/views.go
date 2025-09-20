@@ -139,7 +139,7 @@ func (g *Game) GeneratePlayerView(pn uint) *GameView {
 		}
 	}
 
-	if g.getStage() == PreDeal && inCount > 1 {
+	if g.getStage() == PreDeal && !g.getBetting() && inCount > 1 {
 
 		showCards(g.calledNum)
 		_, scoreToBeat := eval.BestFiveOfSeven(

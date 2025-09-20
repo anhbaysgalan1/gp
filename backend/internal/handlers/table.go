@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/evanofslack/go-poker/internal/auth"
-	"github.com/evanofslack/go-poker/internal/database"
-	"github.com/evanofslack/go-poker/internal/formance"
-	"github.com/evanofslack/go-poker/internal/models"
+	"github.com/anhbaysgalan1/gp/internal/auth"
+	"github.com/anhbaysgalan1/gp/internal/database"
+	"github.com/anhbaysgalan1/gp/internal/formance"
+	"github.com/anhbaysgalan1/gp/internal/models"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -41,16 +41,16 @@ func (h *TableHandler) Routes() chi.Router {
 }
 
 type CreateTableRequest struct {
-	Name        string `json:"name" validate:"required,min=3,max=100"`
-	TableType   string `json:"table_type" validate:"required,oneof=cash tournament"`
-	GameType    string `json:"game_type" validate:"oneof=texas_holdem omaha stud"`
-	MaxPlayers  int    `json:"max_players" validate:"min=2,max=10"`
-	MinBuyIn    int64  `json:"min_buy_in" validate:"required,gt=0"`
-	MaxBuyIn    int64  `json:"max_buy_in" validate:"required,gt=0"`
-	SmallBlind  int64  `json:"small_blind" validate:"required,gt=0"`
-	BigBlind    int64  `json:"big_blind" validate:"required,gt=0"`
-	IsPrivate   bool   `json:"is_private"`
-	Password    string `json:"password,omitempty"`
+	Name       string `json:"name" validate:"required,min=3,max=100"`
+	TableType  string `json:"table_type" validate:"required,oneof=cash tournament"`
+	GameType   string `json:"game_type" validate:"oneof=texas_holdem omaha stud"`
+	MaxPlayers int    `json:"max_players" validate:"min=2,max=10"`
+	MinBuyIn   int64  `json:"min_buy_in" validate:"required,gt=0"`
+	MaxBuyIn   int64  `json:"max_buy_in" validate:"required,gt=0"`
+	SmallBlind int64  `json:"small_blind" validate:"required,gt=0"`
+	BigBlind   int64  `json:"big_blind" validate:"required,gt=0"`
+	IsPrivate  bool   `json:"is_private"`
+	Password   string `json:"password,omitempty"`
 }
 
 type UpdateTableRequest struct {
@@ -187,17 +187,17 @@ func (h *TableHandler) CreateTable(w http.ResponseWriter, r *http.Request) {
 
 	// Create table
 	table := models.PokerTable{
-		Name:        req.Name,
-		TableType:   req.TableType,
-		GameType:    req.GameType,
-		MaxPlayers:  req.MaxPlayers,
-		MinBuyIn:    req.MinBuyIn,
-		MaxBuyIn:    req.MaxBuyIn,
-		SmallBlind:  req.SmallBlind,
-		BigBlind:    req.BigBlind,
-		IsPrivate:   req.IsPrivate,
-		Status:      "waiting",
-		CreatedBy:   userID,
+		Name:       req.Name,
+		TableType:  req.TableType,
+		GameType:   req.GameType,
+		MaxPlayers: req.MaxPlayers,
+		MinBuyIn:   req.MinBuyIn,
+		MaxBuyIn:   req.MaxBuyIn,
+		SmallBlind: req.SmallBlind,
+		BigBlind:   req.BigBlind,
+		IsPrivate:  req.IsPrivate,
+		Status:     "waiting",
+		CreatedBy:  userID,
 	}
 
 	// Hash password if provided

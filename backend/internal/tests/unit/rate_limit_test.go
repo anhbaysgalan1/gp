@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/evanofslack/go-poker/internal/middleware"
+	"github.com/anhbaysgalan1/gp/internal/middleware"
 	"github.com/stretchr/testify/assert"
 )
 

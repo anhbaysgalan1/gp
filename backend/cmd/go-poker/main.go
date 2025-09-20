@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/evanofslack/go-poker/internal/server"
+	"github.com/anhbaysgalan1/gp/internal/server"
 	"github.com/joho/godotenv"
 )
 

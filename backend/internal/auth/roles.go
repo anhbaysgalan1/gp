@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/evanofslack/go-poker/internal/database"
-	"github.com/evanofslack/go-poker/internal/models"
+	"github.com/anhbaysgalan1/gp/internal/database"
+	"github.com/anhbaysgalan1/gp/internal/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )

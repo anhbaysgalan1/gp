@@ -37,7 +37,10 @@ func New() (*Server, error) {
 		return nil, err
 	}
 
-	hub, err := NewHub()
+	// NOTE: This legacy server is being deprecated
+	// The new server is in internal/server/poker_server.go
+	// For now, we'll pass nil as a placeholder
+	hub, err := NewHub(nil)
 	if err != nil {
 		return nil, err
 	}

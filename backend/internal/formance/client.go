@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/evanofslack/go-poker/internal/config"
+	"github.com/anhbaysgalan1/gp/internal/config"
 	"github.com/google/uuid"
 )
 
@@ -71,7 +71,7 @@ func (c *Client) CreateLedger(ctx context.Context) error {
 // BalanceResponse represents balance response from Formance v2 API
 type BalanceResponse struct {
 	Cursor struct {
-		PageSize int `json:"pageSize"`
+		PageSize int  `json:"pageSize"`
 		HasMore  bool `json:"hasMore"`
 		Data     []struct {
 			Address string `json:"address"`
@@ -275,7 +275,7 @@ func (c *Client) GetTransactionHistory(ctx context.Context, userID string, limit
 			}
 			// Check session accounts (prefix match)
 			if (posting.Source != "" && strings.HasPrefix(posting.Source, userSessionPrefix)) ||
-			   (posting.Destination != "" && strings.HasPrefix(posting.Destination, userSessionPrefix)) {
+				(posting.Destination != "" && strings.HasPrefix(posting.Destination, userSessionPrefix)) {
 				hasUserAccount = true
 				break
 			}

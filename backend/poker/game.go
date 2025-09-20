@@ -201,6 +201,8 @@ func (g *Game) resetForNextHand() {
 		g.dealerNum = (g.dealerNum + 1) % uint(len(g.players))
 	}
 
+	// End the current hand and prepare for next hand
+	g.running = false
 	g.setStageAndBetting(PreDeal, false)
 }
 
@@ -415,4 +417,9 @@ func (g *Game) AddPlayer() uint {
 	g.players = append(g.players, player{})
 	g.players[len(g.players)-1].initialize()
 	return uint(len(g.players) - 1)
+}
+
+// EndHandAndReset ends the current hand and prepares for the next hand
+func (g *Game) EndHandAndReset() {
+	g.resetForNextHand()
 }

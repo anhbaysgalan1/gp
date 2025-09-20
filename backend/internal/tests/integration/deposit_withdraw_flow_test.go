@@ -9,11 +9,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/evanofslack/go-poker/internal/config"
-	"github.com/evanofslack/go-poker/internal/database"
-	"github.com/evanofslack/go-poker/internal/formance"
-	"github.com/evanofslack/go-poker/internal/handlers"
-	"github.com/evanofslack/go-poker/internal/models"
+	"github.com/anhbaysgalan1/gp/internal/config"
+	"github.com/anhbaysgalan1/gp/internal/database"
+	"github.com/anhbaysgalan1/gp/internal/formance"
+	"github.com/anhbaysgalan1/gp/internal/handlers"
+	"github.com/anhbaysgalan1/gp/internal/models"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -40,12 +40,12 @@ func TestDepositWithdrawFlowSuite(t *testing.T) {
 func (s *DepositWithdrawFlowTestSuite) SetupSuite() {
 	// Load test configuration
 	cfg := &config.Config{
-		DatabaseURL:       "postgres://user:password@localhost:5432/test_db?sslmode=disable",
-		JWTSecret:         "test-secret",
-		FormanceURL:       "http://localhost:3068",
-		FormanceLedger:    "test-ledger",
-		FormanceCurrency:  "MNT",
-		Environment:       "test",
+		DatabaseURL:      "postgres://user:password@localhost:5432/test_db?sslmode=disable",
+		JWTSecret:        "test-secret",
+		FormanceURL:      "http://localhost:3068",
+		FormanceLedger:   "test-ledger",
+		FormanceCurrency: "MNT",
+		Environment:      "test",
 	}
 
 	// Setup test database

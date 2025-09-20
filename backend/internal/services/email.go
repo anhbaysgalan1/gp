@@ -5,7 +5,7 @@ import (
 	"net/smtp"
 	"strings"
 
-	"github.com/evanofslack/go-poker/internal/config"
+	"github.com/anhbaysgalan1/gp/internal/config"
 )
 
 type EmailService struct {

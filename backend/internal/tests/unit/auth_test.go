@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/evanofslack/go-poker/internal/auth"
+	"github.com/anhbaysgalan1/gp/internal/auth"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -106,9 +106,9 @@ func TestJWTManager_ExtractTokenFromBearer(t *testing.T) {
 	jwtManager := auth.NewJWTManager("test-secret", "test-issuer")
 
 	tests := []struct {
-		name           string
-		bearerToken    string
-		expectedToken  string
+		name          string
+		bearerToken   string
+		expectedToken string
 	}{
 		{
 			name:          "Valid bearer token",

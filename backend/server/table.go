@@ -4,31 +4,39 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/evanofslack/go-poker/poker"
+	"github.com/anhbaysgalan1/gp/internal/engine"
+	"github.com/anhbaysgalan1/gp/internal/services"
 	"github.com/go-redis/redis/v8"
+	"github.com/google/uuid"
 )
 
 // table is a single table or game of poker
 type table struct {
-	name       string
-	rdb        *redis.Client
-	clients    map[*Client]bool
-	register   chan *Client
-	unregister chan *Client
-	broadcast  chan []byte
-	game       *poker.Game
+	id             uuid.UUID
+	name           string
+	rdb            *redis.Client
+	clients        map[*Client]bool
+	register       chan *Client
+	unregister     chan *Client
+	broadcast      chan []byte
+	engine         engine.PokerEngine
+	game           *SimpleGameAdapter           // Simplified compatibility layer using direct GORM operations
+	sessionService *services.GameSessionService // Service for managing real money game sessions
 }
 
-// newTable creates a new table
-func newTable(name string, redisClient *redis.Client) *table {
+// newTable creates a new table using the simplified adapter
+func newTable(name string, redisClient *redis.Client, pokerEngine engine.PokerEngine, tableService *services.TableService, sessionService *services.GameSessionService) *table {
 	return &table{
-		name:       name,
-		rdb:        redisClient,
-		clients:    make(map[*Client]bool),
-		register:   make(chan *Client),
-		unregister: make(chan *Client),
-		broadcast:  make(chan []byte),
-		game:       poker.NewGame(),
+		id:             uuid.New(),
+		name:           name,
+		rdb:            redisClient,
+		clients:        make(map[*Client]bool),
+		register:       make(chan *Client),
+		unregister:     make(chan *Client),
+		broadcast:      make(chan []byte),
+		engine:         pokerEngine,
+		game:           NewSimpleGameAdapter(tableService, name),
+		sessionService: sessionService,
 	}
 }
 

@@ -35,8 +35,8 @@ type Config struct {
 	SMTPFrom     string
 
 	// Formance
-	FormanceAPIURL    string
-	FormanceAPIKey    string
+	FormanceAPIURL     string
+	FormanceAPIKey     string
 	FormanceLedgerName string
 	FormanceCurrency   string
 }
@@ -44,7 +44,7 @@ type Config struct {
 func Load() *Config {
 	return &Config{
 		// Environment
-		Environment:      getEnvOrDefault("ENVIRONMENT", "development"),
+		Environment: getEnvOrDefault("ENVIRONMENT", "development"),
 
 		// Database
 		DatabaseURL:      getEnvOrDefault("DATABASE_URL", ""),
@@ -56,7 +56,7 @@ func Load() *Config {
 
 		// Redis
 		RedisURL:      getEnvOrDefault("REDIS_URL", "redis://localhost:6379"),
-		RedisPassword: getEnvOrDefault("REDIS_PASSWORD", ""),
+		RedisPassword: getEnvOrDefault("REDIS_PASSWORD", "password"),
 
 		// Server
 		Port: getEnvOrDefault("PORT", "8080"),

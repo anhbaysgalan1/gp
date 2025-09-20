@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/evanofslack/go-poker/internal/auth"
-	"github.com/evanofslack/go-poker/internal/database"
-	"github.com/evanofslack/go-poker/internal/formance"
-	"github.com/evanofslack/go-poker/internal/models"
+	"github.com/anhbaysgalan1/gp/internal/auth"
+	"github.com/anhbaysgalan1/gp/internal/database"
+	"github.com/anhbaysgalan1/gp/internal/formance"
+	"github.com/anhbaysgalan1/gp/internal/models"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
@@ -60,8 +60,8 @@ func (h *TournamentHandler) ListTournaments(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	tournamentType := r.URL.Query().Get("type")   // scheduled or sitng
-	status := r.URL.Query().Get("status")         // registering, running, finished
+	tournamentType := r.URL.Query().Get("type") // scheduled or sitng
+	status := r.URL.Query().Get("status")       // registering, running, finished
 
 	var tournaments []models.Tournament
 	query := h.db.Offset(offset).Limit(limit).Order("created_at DESC")
@@ -536,9 +536,9 @@ func (h *TournamentHandler) FinishTournament(w http.ResponseWriter, r *http.Requ
 
 	type FinishTournamentRequest struct {
 		Results []struct {
-			UserID       uuid.UUID `json:"user_id" validate:"required"`
-			Position     int       `json:"position" validate:"required,gt=0"`
-			PrizeAmount  int64     `json:"prize_amount" validate:"gte=0"`
+			UserID      uuid.UUID `json:"user_id" validate:"required"`
+			Position    int       `json:"position" validate:"required,gt=0"`
+			PrizeAmount int64     `json:"prize_amount" validate:"gte=0"`
 		} `json:"results" validate:"required,min=1"`
 	}
 

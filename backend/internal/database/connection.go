@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/evanofslack/go-poker/internal/config"
-	"github.com/evanofslack/go-poker/internal/models"
+	"github.com/anhbaysgalan1/gp/internal/config"
+	"github.com/anhbaysgalan1/gp/internal/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

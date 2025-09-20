@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/evanofslack/go-poker/internal/config"
-	"github.com/evanofslack/go-poker/internal/models"
+	"github.com/anhbaysgalan1/gp/internal/config"
+	"github.com/anhbaysgalan1/gp/internal/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type Service struct {
-	client   *Client
+	client   *Client // Improved client with better filtering
 	currency string
 }
 
@@ -25,7 +25,7 @@ func NewService(cfg *config.Config) *Service {
 
 // Initialize creates the ledger and system accounts
 func (s *Service) Initialize(ctx context.Context) error {
-	// Create ledger
+	// Create ledger using legacy client for now
 	if err := s.client.CreateLedger(ctx); err != nil {
 		return fmt.Errorf("failed to create ledger: %w", err)
 	}
@@ -255,20 +255,20 @@ func (s *Service) DistributeTournamentPrize(ctx context.Context, userID uuid.UUI
 type RakeStrategy string
 
 const (
-	RakeStrategyPerHand     RakeStrategy = "per_hand"     // Percentage of pot
-	RakeStrategyTimeBased   RakeStrategy = "time_based"   // Fixed amount per time period
-	RakeStrategyTournament  RakeStrategy = "tournament"   // Built into buy-in
+	RakeStrategyPerHand    RakeStrategy = "per_hand"   // Percentage of pot
+	RakeStrategyTimeBased  RakeStrategy = "time_based" // Fixed amount per time period
+	RakeStrategyTournament RakeStrategy = "tournament" // Built into buy-in
 )
 
 // RakeConfig holds configuration for rake collection
 type RakeConfig struct {
-	Strategy    RakeStrategy
-	Percentage  float64 // For per-hand rake (e.g., 0.05 for 5%)
-	MaxRake     int64   // Maximum rake per hand
-	MinPot      int64   // Minimum pot size to collect rake
-	TimeAmount  int64   // Fixed amount for time-based rake
-	TableID     uuid.UUID
-	HandID      string
+	Strategy   RakeStrategy
+	Percentage float64 // For per-hand rake (e.g., 0.05 for 5%)
+	MaxRake    int64   // Maximum rake per hand
+	MinPot     int64   // Minimum pot size to collect rake
+	TimeAmount int64   // Fixed amount for time-based rake
+	TableID    uuid.UUID
+	HandID     string
 }
 
 // CollectRake transfers rake to house account using specified strategy
@@ -334,13 +334,13 @@ func (s *Service) collectPerHandRake(ctx context.Context, config RakeConfig, pla
 	}
 
 	metadata := map[string]string{
-		"type":        "rake_collection",
-		"strategy":    string(RakeStrategyPerHand),
-		"table_id":    config.TableID.String(),
-		"hand_id":     config.HandID,
-		"pot_amount":  fmt.Sprintf("%d", potAmount),
-		"rake_rate":   fmt.Sprintf("%.2f", config.Percentage),
-		"players":     fmt.Sprintf("%d", len(playerSessions)),
+		"type":       "rake_collection",
+		"strategy":   string(RakeStrategyPerHand),
+		"table_id":   config.TableID.String(),
+		"hand_id":    config.HandID,
+		"pot_amount": fmt.Sprintf("%d", potAmount),
+		"rake_rate":  fmt.Sprintf("%.2f", config.Percentage),
+		"players":    fmt.Sprintf("%d", len(playerSessions)),
 	}
 
 	transactionID, err := s.client.CreateTransaction(ctx, postings, metadata)
@@ -382,11 +382,11 @@ func (s *Service) collectTimeBasedRake(ctx context.Context, config RakeConfig, p
 	}
 
 	metadata := map[string]string{
-		"type":      "rake_collection",
-		"strategy":  string(RakeStrategyTimeBased),
-		"table_id":  config.TableID.String(),
-		"amount":    fmt.Sprintf("%d", config.TimeAmount),
-		"players":   fmt.Sprintf("%d", len(playerSessions)),
+		"type":     "rake_collection",
+		"strategy": string(RakeStrategyTimeBased),
+		"table_id": config.TableID.String(),
+		"amount":   fmt.Sprintf("%d", config.TimeAmount),
+		"players":  fmt.Sprintf("%d", len(playerSessions)),
 	}
 
 	transactionID, err := s.client.CreateTransaction(ctx, postings, metadata)
@@ -579,7 +579,60 @@ func (s *Service) CreateUserWallet(ctx context.Context, userID uuid.UUID) error 
 	return nil
 }
 
-// GetTransactionHistory fetches transaction history for a user
+// GetTransactionHistory fetches transaction history for a user (legacy method)
 func (s *Service) GetTransactionHistory(ctx context.Context, userID uuid.UUID, limit, offset int) ([]TransactionData, error) {
 	return s.client.GetTransactionHistory(ctx, userID.String(), limit, offset)
+}
+
+// GetWalletTransactions fetches only wallet-related transactions (deposits/withdrawals)
+func (s *Service) GetWalletTransactions(ctx context.Context, userID uuid.UUID, limit, offset int) ([]TransactionData, error) {
+	// Get all transactions and filter client-side for now
+	allTransactions, err := s.client.GetTransactionHistory(ctx, userID.String(), limit*2, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	var walletTransactions []TransactionData
+	for _, tx := range allTransactions {
+		if txType, exists := tx.Metadata["type"]; exists {
+			if typeStr, ok := txType.(string); ok {
+				// Only include wallet-level transactions
+				if typeStr == "deposit" || typeStr == "withdrawal" || typeStr == "tournament_buyin" ||
+					typeStr == "tournament_prize" || typeStr == "rake_collection" {
+					walletTransactions = append(walletTransactions, tx)
+					if len(walletTransactions) >= limit {
+						break
+					}
+				}
+			}
+		}
+	}
+
+	return walletTransactions, nil
+}
+
+// GetGameTransactions fetches only game-related transactions (buyin/cashout)
+func (s *Service) GetGameTransactions(ctx context.Context, userID uuid.UUID, limit, offset int) ([]TransactionData, error) {
+	// Get all transactions and filter client-side for now
+	allTransactions, err := s.client.GetTransactionHistory(ctx, userID.String(), limit*2, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	var gameTransactions []TransactionData
+	for _, tx := range allTransactions {
+		if txType, exists := tx.Metadata["type"]; exists {
+			if typeStr, ok := txType.(string); ok {
+				// Only include game-level transactions
+				if typeStr == "game_buyin" || typeStr == "game_cashout" {
+					gameTransactions = append(gameTransactions, tx)
+					if len(gameTransactions) >= limit {
+						break
+					}
+				}
+			}
+		}
+	}
+
+	return gameTransactions, nil
 }

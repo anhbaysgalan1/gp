@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/evanofslack/go-poker/internal/auth"
-	"github.com/evanofslack/go-poker/internal/database"
-	"github.com/evanofslack/go-poker/internal/formance"
-	"github.com/evanofslack/go-poker/internal/models"
+	"github.com/anhbaysgalan1/gp/internal/auth"
+	"github.com/anhbaysgalan1/gp/internal/database"
+	"github.com/anhbaysgalan1/gp/internal/formance"
+	"github.com/anhbaysgalan1/gp/internal/models"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )

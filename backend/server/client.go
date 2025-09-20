@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/evanofslack/go-poker/internal/formance"
+	"github.com/anhbaysgalan1/gp/internal/formance"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"gorm.io/gorm"
@@ -33,9 +33,9 @@ type Client struct {
 	send            chan []byte     // Buffered channel of outbound bytes
 	uuid            string          // UUID
 	username        string
-	userID          uuid.UUID // Authenticated user ID
-	sessionID       uuid.UUID // Current game session ID for this client
-	table           *table    // Player's table
+	userID          uuid.UUID         // Authenticated user ID
+	sessionID       uuid.UUID         // Current game session ID for this client
+	table           *table            // Player's table
 	formanceService *formance.Service // Access to balance operations
 	db              *gorm.DB          // Database connection
 }
@@ -275,6 +275,28 @@ func (c *Client) processEvents(rawMessage []byte) error {
 
 	case actionGetBalance:
 		handleGetBalance(c)
+		return nil
+
+	// Frontend compatibility actions (map to existing handlers)
+	case "call":
+		handleCall(c)
+		return nil
+	case "check":
+		handleCheck(c)
+		return nil
+	case "fold":
+		handleFold(c)
+		return nil
+	case "raise":
+		// Parse amount from message for raise
+		var raise struct {
+			Amount uint `json:"amount"`
+		}
+		err := json.Unmarshal(rawMessage, &raise)
+		if err != nil {
+			return err
+		}
+		handleRaise(c, raise.Amount)
 		return nil
 
 	default:

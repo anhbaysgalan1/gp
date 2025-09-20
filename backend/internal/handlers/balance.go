@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/evanofslack/go-poker/internal/auth"
-	"github.com/evanofslack/go-poker/internal/formance"
+	"github.com/anhbaysgalan1/gp/internal/auth"
+	"github.com/anhbaysgalan1/gp/internal/formance"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -199,10 +199,10 @@ func (h *BalanceHandler) GetTransactionHistory(w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	// Fetch transaction history from Formance
-	transactions, err := h.formanceService.GetTransactionHistory(r.Context(), userID, limit, offset)
+	// Use the new SDK client with proper wallet transaction filtering
+	transactions, err := h.formanceService.GetWalletTransactions(r.Context(), userID, limit, offset)
 	if err != nil {
-		writeErrorResponse(w, http.StatusInternalServerError, "Failed to fetch transaction history")
+		writeErrorResponse(w, http.StatusInternalServerError, "Failed to fetch wallet transaction history")
 		return
 	}
 
@@ -217,62 +217,18 @@ func (h *BalanceHandler) GetTransactionHistory(w http.ResponseWriter, r *http.Re
 			}
 		}
 
-		// Skip internal game transactions for wallet transaction history
-		// Only show deposits, withdrawals, and external transactions
-		if transactionType == "game_buyin" || transactionType == "game_cashout" {
-			continue // Skip this transaction
-		}
-
 		// Calculate net amount for this user
 		var netAmount int64
 		var description string
 		userWalletAccount := formance.PlayerWalletAccount(userID)
-		userSessionPrefix := formance.SessionPrefix(userID)
 
-		// For internal transfers (between user's wallet and session accounts),
-		// only show the main wallet perspective to avoid double-counting
-		isInternalTransfer := false
+		// For wallet transactions, calculate the impact on the main wallet
 		for _, posting := range tx.Postings {
-			srcIsUserWallet := posting.Source == userWalletAccount
-			dstIsUserWallet := posting.Destination == userWalletAccount
-			srcIsUserSession := posting.Source != "" && len(posting.Source) > len(userSessionPrefix) && posting.Source[:len(userSessionPrefix)] == userSessionPrefix
-			dstIsUserSession := posting.Destination != "" && len(posting.Destination) > len(userSessionPrefix) && posting.Destination[:len(userSessionPrefix)] == userSessionPrefix
-
-			// Check if this is an internal transfer between user's own accounts
-			if (srcIsUserWallet && dstIsUserSession) || (srcIsUserSession && dstIsUserWallet) {
-				isInternalTransfer = true
-				break
+			if posting.Destination == userWalletAccount {
+				netAmount += posting.Amount // Money coming in
 			}
-		}
-
-		for _, posting := range tx.Postings {
-			srcIsUserWallet := posting.Source == userWalletAccount
-			dstIsUserWallet := posting.Destination == userWalletAccount
-			srcIsUserSession := posting.Source != "" && len(posting.Source) > len(userSessionPrefix) && posting.Source[:len(userSessionPrefix)] == userSessionPrefix
-			dstIsUserSession := posting.Destination != "" && len(posting.Destination) > len(userSessionPrefix) && posting.Destination[:len(userSessionPrefix)] == userSessionPrefix
-
-			if isInternalTransfer {
-				// For internal transfers, only count the main wallet impact
-				if dstIsUserWallet {
-					netAmount += posting.Amount
-				}
-				if srcIsUserWallet {
-					netAmount -= posting.Amount
-				}
-			} else {
-				// For external transfers, count all user accounts
-				if dstIsUserWallet {
-					netAmount += posting.Amount
-				}
-				if srcIsUserWallet {
-					netAmount -= posting.Amount
-				}
-				if dstIsUserSession {
-					netAmount += posting.Amount
-				}
-				if srcIsUserSession {
-					netAmount -= posting.Amount
-				}
+			if posting.Source == userWalletAccount {
+				netAmount -= posting.Amount // Money going out
 			}
 		}
 
@@ -394,14 +350,14 @@ func (h *BalanceHandler) GetTableTransactionHistory(w http.ResponseWriter, r *ht
 		}
 	}
 
-	// Fetch transaction history from Formance
-	transactions, err := h.formanceService.GetTransactionHistory(r.Context(), userID, limit, offset)
+	// Use the new SDK client with proper game transaction filtering
+	transactions, err := h.formanceService.GetGameTransactions(r.Context(), userID, limit, offset)
 	if err != nil {
 		writeErrorResponse(w, http.StatusInternalServerError, "Failed to fetch table transaction history")
 		return
 	}
 
-	// Convert to response format - only include game-related transactions
+	// Convert to response format
 	var responseTransactions []map[string]interface{}
 	for _, tx := range transactions {
 		// Extract transaction type from metadata
@@ -410,11 +366,6 @@ func (h *BalanceHandler) GetTableTransactionHistory(w http.ResponseWriter, r *ht
 			if typeStr, ok := txType.(string); ok {
 				transactionType = typeStr
 			}
-		}
-
-		// Only show game-related transactions
-		if transactionType != "game_buyin" && transactionType != "game_cashout" {
-			continue // Skip non-game transactions
 		}
 
 		// Calculate net amount for this user
@@ -442,12 +393,12 @@ func (h *BalanceHandler) GetTableTransactionHistory(w http.ResponseWriter, r *ht
 			if transactionType == "game_buyin" {
 				// Buyin: money goes from wallet to session
 				if srcIsUserWallet && dstIsUserSession {
-					netAmount = -posting.Amount // Negative because money left wallet
+					netAmount = -posting.Amount // Negative because money left wallet for game
 				}
 			} else if transactionType == "game_cashout" {
 				// Cashout: money comes from session to wallet
 				if srcIsUserSession && dstIsUserWallet {
-					netAmount = posting.Amount // Positive because money came to wallet
+					netAmount = posting.Amount // Positive because money came from game
 				}
 			}
 		}

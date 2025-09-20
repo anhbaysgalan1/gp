@@ -3,8 +3,8 @@ package unit
 import (
 	"testing"
 
-	"github.com/evanofslack/go-poker/internal/models"
-	"github.com/evanofslack/go-poker/internal/validation"
+	"github.com/anhbaysgalan1/gp/internal/models"
+	"github.com/anhbaysgalan1/gp/internal/validation"
 	"github.com/stretchr/testify/assert"
 )
 

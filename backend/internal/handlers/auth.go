@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/evanofslack/go-poker/internal/auth"
-	"github.com/evanofslack/go-poker/internal/models"
-	"github.com/evanofslack/go-poker/internal/services"
-	"github.com/evanofslack/go-poker/internal/validation"
+	"github.com/anhbaysgalan1/gp/internal/auth"
+	"github.com/anhbaysgalan1/gp/internal/models"
+	"github.com/anhbaysgalan1/gp/internal/services"
+	"github.com/anhbaysgalan1/gp/internal/validation"
 	"github.com/go-chi/chi/v5"
 )
 

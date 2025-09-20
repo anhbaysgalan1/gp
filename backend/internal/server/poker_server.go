@@ -10,22 +10,24 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/evanofslack/go-poker/internal/auth"
-	"github.com/evanofslack/go-poker/internal/config"
-	"github.com/evanofslack/go-poker/internal/database"
-	"github.com/evanofslack/go-poker/internal/formance"
-	"github.com/evanofslack/go-poker/internal/handlers"
-	custommiddleware "github.com/evanofslack/go-poker/internal/middleware"
-	"github.com/evanofslack/go-poker/internal/services"
-	"github.com/evanofslack/go-poker/server"
+	"github.com/anhbaysgalan1/gp/internal/auth"
+	"github.com/anhbaysgalan1/gp/internal/config"
+	"github.com/anhbaysgalan1/gp/internal/database"
+	"github.com/anhbaysgalan1/gp/internal/formance"
+	"github.com/anhbaysgalan1/gp/internal/handlers"
+	custommiddleware "github.com/anhbaysgalan1/gp/internal/middleware"
+	"github.com/anhbaysgalan1/gp/internal/services"
+	"github.com/anhbaysgalan1/gp/server"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/go-redis/redis/v8"
 )
 
 type PokerServer struct {
 	config          *config.Config
 	db              *database.DB
+	redisClient     *redis.Client
 	formanceService *formance.Service
 	jwtManager      *auth.JWTManager
 	authMiddleware  *auth.AuthMiddleware
@@ -52,6 +54,34 @@ func NewPokerServer() (*PokerServer, error) {
 		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
 
+	// Setup Redis connection (optional)
+	var redisClient *redis.Client
+	if cfg.RedisURL != "" {
+		opts, err := redis.ParseURL(cfg.RedisURL)
+		if err != nil {
+			slog.Warn("Failed to parse Redis URL, continuing without Redis", "error", err)
+		} else {
+			if cfg.RedisPassword != "" {
+				opts.Password = cfg.RedisPassword
+			}
+
+			redisClient = redis.NewClient(opts)
+
+			// Test Redis connection
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			_, err = redisClient.Ping(ctx).Result()
+			cancel()
+
+			if err != nil {
+				slog.Warn("Failed to connect to Redis, continuing without Redis", "error", err)
+				redisClient.Close()
+				redisClient = nil
+			} else {
+				slog.Info("Successfully connected to Redis", "url", cfg.RedisURL)
+			}
+		}
+	}
+
 	// Setup Formance service
 	formanceService := formance.NewService(cfg)
 
@@ -73,8 +103,8 @@ func NewPokerServer() (*PokerServer, error) {
 	apiRateLimiter := custommiddleware.NewAPIRateLimiter()
 	authRateLimiter := custommiddleware.NewAuthRateLimiter()
 
-	// Setup WebSocket hub
-	hub, err := server.NewHub()
+	// Setup WebSocket hub with database access and optional Redis
+	hub, err := server.NewHubWithRedis(db.DB, redisClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create WebSocket hub: %w", err)
 	}
@@ -82,6 +112,7 @@ func NewPokerServer() (*PokerServer, error) {
 	return &PokerServer{
 		config:          cfg,
 		db:              db,
+		redisClient:     redisClient,
 		formanceService: formanceService,
 		jwtManager:      jwtManager,
 		authMiddleware:  authMiddleware,
@@ -130,6 +161,13 @@ func (s *PokerServer) Shutdown() error {
 	// Shutdown HTTP server
 	if err := s.server.Shutdown(ctx); err != nil {
 		slog.Error("Server forced to shutdown", "error", err)
+	}
+
+	// Close Redis connection
+	if s.redisClient != nil {
+		if err := s.redisClient.Close(); err != nil {
+			slog.Error("Failed to close Redis connection", "error", err)
+		}
 	}
 
 	// Close database connection

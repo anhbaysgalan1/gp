@@ -10,9 +10,9 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/evanofslack/go-poker/internal/formance"
-	"github.com/evanofslack/go-poker/internal/handlers"
-	"github.com/evanofslack/go-poker/internal/models"
+	"github.com/anhbaysgalan1/gp/internal/formance"
+	"github.com/anhbaysgalan1/gp/internal/handlers"
+	"github.com/anhbaysgalan1/gp/internal/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -483,12 +483,12 @@ func TestBalanceHandler_GetBalance(t *testing.T) {
 	userID := uuid.New()
 
 	tests := []struct {
-		name               string
-		setupBalances      func()
+		name                string
+		setupBalances       func()
 		expectedMainBalance int64
 		expectedGameBalance int64
-		expectError        bool
-		expectedStatus     int
+		expectError         bool
+		expectedStatus      int
 	}{
 		{
 			name: "Get balance successfully",
@@ -498,8 +498,8 @@ func TestBalanceHandler_GetBalance(t *testing.T) {
 			},
 			expectedMainBalance: 50000,
 			expectedGameBalance: 25000,
-			expectError:        false,
-			expectedStatus:     http.StatusOK,
+			expectError:         false,
+			expectedStatus:      http.StatusOK,
 		},
 		{
 			name: "Get balance with zero balances",
@@ -509,8 +509,8 @@ func TestBalanceHandler_GetBalance(t *testing.T) {
 			},
 			expectedMainBalance: 0,
 			expectedGameBalance: 0,
-			expectError:        false,
-			expectedStatus:     http.StatusOK,
+			expectError:         false,
+			expectedStatus:      http.StatusOK,
 		},
 		{
 			name: "Service error",
@@ -791,11 +791,11 @@ func TestBalanceHandler_GetTransactionHistory(t *testing.T) {
 	require.NoError(t, err)
 
 	tests := []struct {
-		name               string
-		queryParams        string
-		expectedStatus     int
-		expectedTxCount    int
-		expectError        bool
+		name            string
+		queryParams     string
+		expectedStatus  int
+		expectedTxCount int
+		expectError     bool
 	}{
 		{
 			name:            "Get transaction history successfully",

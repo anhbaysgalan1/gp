@@ -18,7 +18,8 @@
       "Bash(pkill:*)",
       "Bash(xargs kill:*)",
       "Bash(pnpm build:*)",
-      "Bash(pnpm dev:*)"
+      "Bash(pnpm dev:*)",
+      "Bash(xargs ps:*)"
     ],
     "deny": [],
     "ask": []
