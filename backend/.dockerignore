@@ -1,0 +1,46 @@
+# Git
+.git
+.gitignore
+README.md
+
+# Docker files
+Dockerfile
+.dockerignore
+
+# Development files
+.env*
+.vscode
+.idea
+
+# Build artifacts
+main
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test files
+*_test.go
+test/
+coverage.out
+
+# Documentation
+docs/
+*.md
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Dependencies that will be downloaded
+vendor/
